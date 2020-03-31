@@ -43,8 +43,9 @@ from snapcraft.internal import errors
 from typing import List
 
 
-_DOTNET_RELEASE_METADATA_URL = "http://dotnetcli.blob.core.windows.net/dotnet/release-metadata/2.0/releases.json"  # noqa
+_DOTNET_RELEASE_METADATA_URL = "http://dotnetcli.blob.core.windows.net/dotnet/release-metadata/{version}/releases.json"  # noqa
 _RUNTIME_DEFAULT = "2.0.9"
+_VERSION_DEFAULT = "2.0"
 
 # TODO extend for other architectures
 _SDK_ARCH = ["amd64"]
@@ -82,10 +83,16 @@ class DotNetPlugin(snapcraft.BasePlugin):
     def schema(cls):
         schema = super().schema()
 
+        schema["properties"]["dotnet-version"] = {
+            "type": "number",
+            "default": _RUNTIME_DEFAULT,
+        }
+        
         schema["properties"]["dotnet-runtime-version"] = {
             "type": "string",
             "default": _RUNTIME_DEFAULT,
         }
+        
         schema["required"] = ["source"]
 
         return schema
@@ -195,7 +202,8 @@ class DotNetPlugin(snapcraft.BasePlugin):
     def _get_dotnet_release_metadata(self):
         package_metadata = []
 
-        req = urllib.request.Request(_DOTNET_RELEASE_METADATA_URL)
+        metadata_url = _DOTNET_RELEASE_METADATA_URL.format(version=self.options.dotnet_version)
+        req = urllib.request.Request(metadata_url)
         r = urllib.request.urlopen(req).read()
         package_metadata = json.loads(r.decode("utf-8"))
 
